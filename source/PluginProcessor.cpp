@@ -12,6 +12,7 @@ PluginProcessor::PluginProcessor()
                      #endif
                        )
 {
+
 }
 
 PluginProcessor::~PluginProcessor()
@@ -89,6 +90,12 @@ void PluginProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
     juce::ignoreUnused (sampleRate, samplesPerBlock);
+
+    proEq_Unit.channel =2;
+    proEq_Unit.ct = nullptr;
+    proEq_Unit.enable = true;
+    proEq_Unit.sample_rate = sampleRate;
+    AudioEffectproEqInit(&proEq_Unit,2,sampleRate);
 }
 
 void PluginProcessor::releaseResources()
@@ -149,6 +156,28 @@ void PluginProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         juce::ignoreUnused (channelData);
         // ..do something to the data...
     }
+
+    size_t numSamples = buffer.getNumSamples();
+
+    auto* pcm_L = buffer.getWritePointer (0);
+    auto* pcm_R = buffer.getWritePointer (1);
+
+    float *pcm = new float[2 * numSamples];
+    for (size_t i = 0; i < numSamples; ++i)
+    {
+        pcm[2 * i + 1 ]=pcm_L[i];
+        pcm[2 * i + 0 ]=pcm_R[i];
+    }
+
+    AudioEffectproEqApply(&proEq_Unit,pcm,pcm,(int)numSamples);
+
+    for (size_t i = 0; i < numSamples; ++i)
+    {
+        pcm_L[i] = pcm[2 * i + 1 ];
+        pcm_R[i] = pcm[2 * i + 0 ];
+    }
+
+    delete[] pcm;
 }
 
 //==============================================================================
