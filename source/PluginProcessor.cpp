@@ -10,13 +10,14 @@ PluginProcessor::PluginProcessor()
                       #endif
                        .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
                      #endif
-                       )
+                       ),apvts(*this,nullptr,"Parameters", CreateParameters())
 {
 
 }
 
 PluginProcessor::~PluginProcessor()
 {
+
 }
 
 //==============================================================================
@@ -91,6 +92,15 @@ void PluginProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     // initialisation that you need..
     juce::ignoreUnused (sampleRate, samplesPerBlock);
 
+    AudioChain.setPlayConfigDetails(getMainBusNumInputChannels(),
+                                    getMainBusNumOutputChannels(),
+                                            sampleRate,
+                                            samplesPerBlock);
+
+    AudioChain.prepareToPlay(sampleRate, samplesPerBlock);
+    AudioChain.AudioGroupInit();
+    AudioChain.addProcessorNode(std::make_unique < CombFilter >());
+
     proEq_Unit.channel =2;
     proEq_Unit.ct = nullptr;
     proEq_Unit.enable = true;
@@ -157,27 +167,7 @@ void PluginProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         // ..do something to the data...
     }
 
-    size_t numSamples = buffer.getNumSamples();
-
-    auto* pcm_L = buffer.getWritePointer (0);
-    auto* pcm_R = buffer.getWritePointer (1);
-
-    float *pcm = new float[2 * numSamples];
-    for (size_t i = 0; i < numSamples; ++i)
-    {
-        pcm[2 * i + 1 ]=pcm_L[i];
-        pcm[2 * i + 0 ]=pcm_R[i];
-    }
-
-    AudioEffectproEqApply(&proEq_Unit,pcm,pcm,(int)numSamples);
-
-    for (size_t i = 0; i < numSamples; ++i)
-    {
-        pcm_L[i] = pcm[2 * i + 1 ];
-        pcm_R[i] = pcm[2 * i + 0 ];
-    }
-
-    delete[] pcm;
+    AudioChain.processBlock(buffer, midiMessages);
 }
 
 //==============================================================================
@@ -190,7 +180,12 @@ juce::AudioProcessorEditor* PluginProcessor::createEditor()
 {
     return new PluginEditor (*this);
 }
+juce::AudioProcessorValueTreeState::ParameterLayout PluginProcessor::CreateParameters()
+{
+    juce::AudioProcessorValueTreeState::ParameterLayout parameterLayout;
 
+    return parameterLayout;
+}
 //==============================================================================
 void PluginProcessor::getStateInformation (juce::MemoryBlock& destData)
 {

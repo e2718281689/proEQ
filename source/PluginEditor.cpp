@@ -44,5 +44,5 @@ void PluginEditor::resized()
     // layout the positions of your child components here
     auto area = getLocalBounds();
     area.removeFromBottom(50);
-    inspectButton.setBounds (getLocalBounds().withSizeKeepingCentre(100, 50));
+    inspectButton.setBounds (getLocalBounds().withSizeKeepingCentre(50, 25));
 }

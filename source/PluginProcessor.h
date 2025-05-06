@@ -2,6 +2,8 @@
 
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "ctest/cproEQ.h"
+#include "Effect/ProcessorGroup.h"
+#include "Effect/Filter/CombFilter.h"
 
 #if (MSVC)
 #include "ipps.h"
@@ -39,7 +41,14 @@ public:
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
-    proEqUnit proEq_Unit;
+    juce::AudioProcessorValueTreeState::ParameterLayout CreateParameters();
+
+    juce::AudioProcessorValueTreeState apvts;
 private:
+
+    proEqUnit proEq_Unit;
+
+    ProcessorGroup<> AudioChain{&apvts};
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginProcessor)
 };
