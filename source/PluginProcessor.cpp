@@ -99,13 +99,10 @@ void PluginProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 
     AudioChain.prepareToPlay(sampleRate, samplesPerBlock);
     AudioChain.AudioGroupInit();
-    AudioChain.addProcessorNode(std::make_unique < CombFilter >());
 
-    proEq_Unit.channel =2;
-    proEq_Unit.ct = nullptr;
-    proEq_Unit.enable = true;
-    proEq_Unit.sample_rate = sampleRate;
-    AudioEffectproEqInit(&proEq_Unit,2,sampleRate);
+    AudioChain.addProcessorNode(std::make_unique < proEQ >());
+    // AudioChain.addProcessorNode(std::make_unique < CombFilter >());
+
 }
 
 void PluginProcessor::releaseResources()
@@ -168,6 +165,9 @@ void PluginProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     }
 
     AudioChain.processBlock(buffer, midiMessages);
+
+
+
 }
 
 //==============================================================================
@@ -183,6 +183,18 @@ juce::AudioProcessorEditor* PluginProcessor::createEditor()
 juce::AudioProcessorValueTreeState::ParameterLayout PluginProcessor::CreateParameters()
 {
     juce::AudioProcessorValueTreeState::ParameterLayout parameterLayout;
+
+    parameterLayout.add(std::make_unique<juce::AudioParameterFloat>(
+        "CombFcSlider",
+        "CombFcSlider",
+        juce::NormalisableRange<float>(20.0f, 20000.0f, 0.01f),
+        1000.0f));
+
+    parameterLayout.add(std::make_unique<juce::AudioParameterFloat>(
+        "CombGainSlider",
+        "CombGainSlider",
+        juce::NormalisableRange<float>(-1.0f, 1.0f, 0.01f),
+        0.0f));
 
     return parameterLayout;
 }

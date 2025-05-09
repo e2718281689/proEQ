@@ -23,7 +23,7 @@ typedef struct _proEqtext
 {
     uint8_t         channel;
     uint32_t 		sample_rate;
-    float 		buf[CHANNEL_NUM][FILTER_NUM][HISTORICAL_VALUE_NUM];
+    double 		buf[CHANNEL_NUM][FILTER_NUM][HISTORICAL_VALUE_NUM];
 }proEqtext;
 
 typedef struct _proEqUnit
@@ -39,7 +39,7 @@ typedef struct _proEqUnit
 
 void AudioEffectproEqInit(proEqUnit* unit, uint8_t channel, uint32_t sample_rate);
 
-void AudioEffectproEqApply(proEqUnit *unit, float *pcm_in, float *pcm_out, uint32_t n);
+void AudioEffectproEqApply(proEqUnit *unit, double *pcm_in, double *pcm_out, uint32_t n);
 
 void AudioEffectproEqConfigure(proEqUnit *unit);
 

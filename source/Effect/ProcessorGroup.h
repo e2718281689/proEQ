@@ -101,7 +101,7 @@ public:
         {
             if (previousNode!= nullptr)
             {
-                for (int channel = 0; channel < 1; ++channel)// stereo in ,channel < 2
+                for (int channel = 0; channel < 2; ++channel)// stereo in ,channel < 2
                 {
                     juce::Logger::outputDebugString("previousNode=" + juce::String(previousNode->ProcessorName));
                     juce::Logger::outputDebugString("currentNode=" + juce::String(currentNode->ProcessorName));

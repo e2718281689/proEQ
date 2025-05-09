@@ -1,7 +1,7 @@
 #pragma once
 
 #include <juce_audio_processors/juce_audio_processors.h>
-#include "ctest/cproEQ.h"
+#include "Effect/Filter/proEQ.h"
 #include "Effect/ProcessorGroup.h"
 #include "Effect/Filter/CombFilter.h"
 
@@ -45,8 +45,6 @@ public:
 
     juce::AudioProcessorValueTreeState apvts;
 private:
-
-    proEqUnit proEq_Unit;
 
     ProcessorGroup<> AudioChain{&apvts};
 
