@@ -24,15 +24,15 @@ public:
 
     void parameterChanged(const juce::String& parameterID, float newValue)
     {
-        if (parameterID.equalsIgnoreCase("CombFcSlider"))
+        if (parameterID.equalsIgnoreCase ("CombFcSlider"))
         {
-            delayLine.setDelay (Spec.sampleRate/newValue);
-            juce::Logger::outputDebugString("Comb delay = " +  juce::String(Spec.sampleRate/newValue));
+            delayLine.setDelay (Spec.sampleRate / newValue);
+            juce::Logger::outputDebugString ("Comb delay = " + juce::String (Spec.sampleRate / newValue));
         }
-        if (parameterID.equalsIgnoreCase("CombGainSlider"))
+        if (parameterID.equalsIgnoreCase ("CombGainSlider"))
         {
             CombGain = newValue;
-            juce::Logger::outputDebugString("Comb Gain = " +  juce::String(CombGain));
+            juce::Logger::outputDebugString ("Comb Gain = " + juce::String (CombGain));
         }
     }
 

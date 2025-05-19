@@ -23,30 +23,6 @@ double get2LowPassMagnitude2(double w0, double q, double w)
     return get2Magnitude2(coeff , w);
 }
 
-double doubleget2HighPassMagnitude2(double w0, double q, double w)
-{
-    filter_coeff coeff = {1, w0 / q, w0 * w0, 1, 0, 0};
-    return get2Magnitude2(coeff, w);
-}
-
-double get2BandPassMagnitude2(double w0, double q, double w)
-{
-    filter_coeff coeff = {1, w0 / q, w0 * w0, 0, w0 / q, 0};
-    return get2Magnitude2(coeff, w);
-}
-
-double get2NotchMagnitude2(double w0, double q, double w)
-{
-    filter_coeff coeff ={1, w0 / q, w0 * w0, 1, 0, w0 * w0};
-    return get2Magnitude2(coeff, w);
-}
-
-double get2PeakMagnitude2(double w0, double g, double q, double w)
-{
-    filter_coeff coeff = {1, w0 / sqrt(g) / q, w0 * w0, 1, w0 * sqrt(g) / q, w0 * w0};
-    return get2Magnitude2(coeff, w);
-}
-
 double get2TiltShelfMagnitude2(double w0, double g, double q, double w)
 {
     const double A = sqrt(g);

@@ -75,45 +75,6 @@ uint32_t updateShelfCoeffs(const uint32_t n, const uint32_t startIdx,
     return number;
 }
 
-uint32_t updateBandPassCoeffs(const uint32_t n, const uint32_t startIdx,
-                            const double w0, const double q0,
-                            filter_coeff coeffs[16],
-                            filter_coeff (*func)(const double, const double)
-                            )
-{
-    if (n < 2) { return 0; }
-    const uint32_t number = n / 2;
-    const double halfbw = asinh(0.5 / q0) / log(2);
-    const double w = w0 / pow(2, halfbw);
-    const double g = db_to_gain(-6 / (double)(n));
-    const double _q = sqrt(1 - g * g) * w * w0 / g / (w0 * w0 - w * w);
-
-    const filter_coeff singleCoeff = func(w0, _q);
-    for (uint32_t i = 0; i < n / 2; ++i) {
-        coeffs[i + startIdx] = singleCoeff;
-    }
-    return number;
-}
-
-uint32_t updateNotchCoeffs(const uint32_t n, const uint32_t startIdx,
-                         const double w0, const double q0,
-                         filter_coeff coeffs[16],
-                         filter_coeff (*func)(const double, const double)
-                         )
-{
-    if (n < 2) { return 0; }
-    const uint32_t number = n / 2;
-    const double halfbw = asinh(0.5 / q0) / log(2);
-    const double w = w0 / pow(2, halfbw);
-    const double g = db_to_gain(-6 / (double)(n));
-    const double _q = g * w * w0 / sqrt((1 - g * g)) / (w0 * w0 - w * w);
-
-    const filter_coeff singleCoeff = func(w0, _q);
-    for (uint32_t i = 0; i < n / 2; ++i) {
-        coeffs[i + startIdx] = singleCoeff;
-    }
-    return number;
-}
 
 uint32_t updateBandShelfCoeffs(const uint32_t n, const uint32_t startIdx,
                              const double w0, const double g0, const double q0,
@@ -164,11 +125,12 @@ uint32_t updateCoeffs( enum FilterType filterType, const uint8_t n,
                     return 1;
                 }
                 default: {
-                    return updateBandShelfCoeffs(n, 0, w0, g0, q0, coeffs,
-                                                    get1LowShelf,
-                                                    get2LowShelf,
-                                                    get1HighShelf,
-                                                    get2HighShelf);
+                    // return updateBandShelfCoeffs(n, 0, w0, g0, q0, coeffs,
+                    //                                 get1LowShelf,
+                    //                                 get2LowShelf,
+                    //                                 get1HighShelf,
+                    //                                 get2HighShelf);
+                    return 0;
                 }
             }
         case lowShelf:
@@ -191,21 +153,6 @@ uint32_t updateCoeffs( enum FilterType filterType, const uint8_t n,
                 n, 0,
                 w0, q0,
                 coeffs,get1HighPass,get2HighPass);
-        case bandShelf:
-            return updateBandShelfCoeffs(n, 0, w0, g0, q0, coeffs,
-                                            get1LowShelf,
-                                            get2LowShelf,
-                                            get1HighShelf,
-                                            get2HighShelf);
-        case tiltShelf:
-            return updateShelfCoeffs(
-                n, 0,
-                w0, g0, sqrt(q0 * sqrt(2)) / sqrt(2),
-                coeffs,get1TiltShelf,get2TiltShelf);
-        case notch:
-            return updateNotchCoeffs(n, 0, w0, q0, coeffs,get2Notch);
-        case bandPass:
-            return updateBandPassCoeffs(n, 0, w0, q0, coeffs,get2BandPass);
         default:
             return 0;
     }

@@ -28,16 +28,34 @@ enum buf_index
 
 typedef uint8_t FilterType;
 
-double eq_coeff[16][5] ={0};
+void proEq_inform_Configure(proEqtext* ct, uint8_t filter_index, uint8_t filter, uint8_t db_oct, float f, float gDB, float q0 , uint8_t enable)
+{
+    memset(ct->eq_coeff[filter_index], 0, sizeof(float) * FILTER_MAX_ORDER_NUM * FILTER_COEFFS_NUM);
+    memset(ct->eq_filter_order_switch[filter_index], 0, sizeof(float) * FILTER_MAX_ORDER_NUM);
 
-uint8_t eq_switch[16]= {1,1,1,1,
-                        1,1,1,1,
-                        0,0,0,0,
-                        0,0,0,0};
+    uint8_t number = db_oct/6;
+    filter_coeff xxx[8]={0};
+    uint32_t filter_order =0;
+    float fs = ct->sample_rate;
+    filter_order = updateCoeffs(filter,number,f,fs,gDB,q0,xxx);
+    for (int order = 0; order < filter_order; ++order)
+    {
 
+        ct->eq_coeff[filter_index][order][0]=xxx[order].coeff[3]/xxx[order].coeff[0];
+        ct->eq_coeff[filter_index][order][1]=xxx[order].coeff[4]/xxx[order].coeff[0];
+        ct->eq_coeff[filter_index][order][2]=xxx[order].coeff[5]/xxx[order].coeff[0];
+        ct->eq_coeff[filter_index][order][3]=xxx[order].coeff[1]/xxx[order].coeff[0];
+        ct->eq_coeff[filter_index][order][4]=xxx[order].coeff[2]/xxx[order].coeff[0];
 
+        ct->eq_filter_order_switch[filter_index][order] = 1;
+    }
 
-void AudioEffectproEqConfigure(proEqUnit *unit)
+    ct->eq_filter_switch[filter_index] = 1;
+
+    memset(ct->buf[0][filter_index], 0, sizeof(float) * FILTER_MAX_ORDER_NUM * HISTORICAL_VALUE_NUM );
+}
+
+void AudioEffectproEqConfigure(proEqUnit *unit, uint8_t filter_index)
 {
 	if(!unit->enable)
 	{
@@ -46,16 +64,16 @@ void AudioEffectproEqConfigure(proEqUnit *unit)
 
 	if(unit->ct != NULL)
 	{
-	    filter_coeff xxx[16]={0};
-	    updateCoeffs(lowPass,16,1000,44100,0,0.707,xxx);
-        for (int i = 0; i < 16; ++i)
-        {
-            eq_coeff[i][0]=xxx[i].coeff[3];
-            eq_coeff[i][1]=xxx[i].coeff[4];
-            eq_coeff[i][2]=xxx[i].coeff[5];
-            eq_coeff[i][3]=xxx[i].coeff[1];
-            eq_coeff[i][4]=xxx[i].coeff[2];
-        }
+
+	    proEq_inform_Configure(unit->ct,
+	                            filter_index,
+	                            unit->filter[filter_index].filter_mod,
+	                            unit->filter[filter_index].filter_dboct,
+	                            unit->filter[filter_index].filter_f,
+	                            unit->filter[filter_index].filter_gain,
+	                            unit->filter[filter_index].filter_q,
+	                            unit->filter[filter_index].enable);
+
 	}
 }
 
@@ -69,10 +87,10 @@ void pro_eq_init(proEqtext* ct, uint8_t channel, uint32_t sample_rate)
 
 void pro_eq_apply(proEqtext* ct, double *pcm_in, double *pcm_out, uint32_t n)
 {
-
 	uint16_t filter = 0, s = 0, ch = 0;
-	double out = 0;
-	double input = 0;
+    uint16_t order = 0;
+	float out = 0;
+	float input = 0;
 
 	for(ch = 0; ch<(ct->channel); ch++)
 	{
@@ -82,23 +100,30 @@ void pro_eq_apply(proEqtext* ct, double *pcm_in, double *pcm_out, uint32_t n)
 
 			for (filter = 0; filter < 16 ;filter++)
 			{
-				if(eq_switch[filter] == 1)
+				if(ct->eq_filter_switch[filter] == 1)
 				{
-					ct->buf[ch][filter][IN2] = ct->buf[ch][filter][IN1];
-					ct->buf[ch][filter][IN1] = ct->buf[ch][filter][IN0];
-					ct->buf[ch][filter][IN0] = input;
+				    for (order = 0; order < FILTER_MAX_ORDER_NUM ;order++)
+				    {
+				        if (ct->eq_filter_order_switch[filter][order] == 1)
+				        {
+				            ct->buf[ch][filter][order][IN2] = ct->buf[ch][filter][order][IN1];
+				            ct->buf[ch][filter][order][IN1] = ct->buf[ch][filter][order][IN0];
+				            ct->buf[ch][filter][order][IN0] = input;
 
-					ct->buf[ch][filter][OUT2] = ct->buf[ch][filter][OUT1];
-					ct->buf[ch][filter][OUT1] = ct->buf[ch][filter][OUT0];
+				            ct->buf[ch][filter][order][OUT2] = ct->buf[ch][filter][order][OUT1];
+				            ct->buf[ch][filter][order][OUT1] = ct->buf[ch][filter][order][OUT0];
 
-					ct->buf[ch][filter][OUT0] =   (eq_coeff[filter][A0] * input)
-										        + (eq_coeff[filter][A1] * ct->buf[ch][filter][IN1])
-										        + (eq_coeff[filter][A2] * ct->buf[ch][filter][IN2])
-										        - (eq_coeff[filter][B1] * ct->buf[ch][filter][OUT1])
-										        - (eq_coeff[filter][B2] * ct->buf[ch][filter][OUT2]);
+				            ct->buf[ch][filter][order][OUT0] =   (ct->eq_coeff[filter][order][A0] * input)
+                                                        + (ct->eq_coeff[filter][order][A1] * ct->buf[ch][filter][order][IN1])
+                                                        + (ct->eq_coeff[filter][order][A2] * ct->buf[ch][filter][order][IN2])
+                                                        - (ct->eq_coeff[filter][order][B1] * ct->buf[ch][filter][order][OUT1])
+                                                        - (ct->eq_coeff[filter][order][B2] * ct->buf[ch][filter][order][OUT2]);
 
-					out = ct->buf[ch][filter][OUT0];
-					input = out;
+				            out = ct->buf[ch][filter][order][OUT0];
+				            input = out;
+				        }
+
+				    }
 				}
 				else
 				{
@@ -140,7 +165,7 @@ void AudioEffectproEqInit(proEqUnit* unit, uint8_t channel, uint32_t sample_rate
 		memset(unit->ct, 0, sizeof(proEqtext));
 
 		pro_eq_init(unit->ct,channel,sample_rate);
-		AudioEffectproEqConfigure(unit);
+		// AudioEffectproEqConfigure(unit);
 	}
 }
 

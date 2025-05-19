@@ -141,109 +141,9 @@ filter_coeff get2HighPass(const double w0, const double q)
     return filtercoeff;
 }
 
-filter_coeff get2BandPass(const double w0, double q)
-{
-    q = max(q, 0.025);
-    filter_middle_coeff a = solve_a(w0, 0.5 / q , -1);
-    filter_middle_coeff A = get_AB(a);
-
-    if (w0 > pi / 32) {
-        filter_middle_coeff phi0 = get_phi(w0);
-        double R1 = dot_product(phi0, A);
-        filter_middle_coeff RR2 ={-1, 1, 4 * (phi0.coeff[0] - phi0.coeff[1])};
-        double R2 = dot_product(RR2, A);
-
-        filter_middle_coeff B={0};
-        B.coeff[0] = 0.0;
-        B.coeff[2] = (R1 - R2 * phi0.coeff[1]) / 4 / pow(phi0.coeff[1], 2);
-        B.coeff[1] = R2 + 4 * (phi0.coeff[1] - phi0.coeff[0]) * B.coeff[2];
-
-        const filter_middle_coeff b = get_ab(B);
-        // return {a[0], a[1], a[2], b[0], b[1], b[2]};
-
-        filter_coeff filtercoeff = {a.coeff[0], a.coeff[1], a.coeff[2],
-                                    b.coeff[0], b.coeff[1], b.coeff[2]};
-        return filtercoeff;
-
-    } else {
-        const bandwidth_coeff _w = get_bandwidth(w0, q);
-        const double w1 = _w.coeff[0], w2 = _w.coeff[1];
-        filter_middle_coeff ws={{0, w0, w0 > piHalf ? w1 : w2}};
-        const filter_middle_coeff _ws = ws;
-        filter_middle_coeff B={{-1, -1, -1}};
-        uint32_t trial = 0;
-        while (!check_AB(B) && trial < 20) {
-            trial += 1;
-            filter_middle_coeff phi[3]={0};
-            filter_middle_coeff res={0};
-            for (size_t i = 0; i < 3; ++i) {
-                phi[i] = get_phi(ws.coeff[i]);
-                res.coeff[i] = get2BandPassMagnitude2(w0, q, ws.coeff[i]) * dot_product(phi[i], A);
-            }
-            B = linear_solve(phi, res);
-            ws.coeff[2] = w0 > piHalf ? 0.9 * ws.coeff[2] : 0.9 * ws.coeff[2] + 0.1 * pi;
-        }
-        if (trial == 20) {
-            ws = _ws;
-            filter_middle_coeff phi[3]={0};
-            filter_middle_coeff res={0};
-            for (size_t i = 0; i < 3; ++i) {
-                phi[i] = get_phi(ws.coeff[i]);
-                res.coeff[i] = get2BandPassMagnitude2(w0, q, ws.coeff[i]) * dot_product(phi[i], A);
-            }
-            B = linear_solve(phi, res);
-            ws.coeff[2] = w0 > piHalf ? 0.9 * ws.coeff[2] : 0.9 * ws.coeff[2] + 0.1 * pi;
-        }
-        const filter_middle_coeff b = get_ab(B);
-        // return {a[0], a[1], a[2], b[0], b[1], b[2]};
-
-        filter_coeff filtercoeff = {a.coeff[0], a.coeff[1], a.coeff[2],
-                            b.coeff[0], b.coeff[1], b.coeff[2]};
-        return filtercoeff;
-    }
-}
-
-filter_coeff get2Notch(const double w0, const double q)
-{
-
-    filter_middle_coeff b;
-    if (w0 < pi) {
-       // filter_middle_coeff b = {1, -2 * cos(w0), 1};
-        b.coeff[0]=1;
-        b.coeff[1]=-2 * cos(w0);
-        b.coeff[1]=1;
-    } else {
-        // filter_middle_coeff b = {1, -2 * sinh(w0), 1};
-        b.coeff[0]=1;
-        b.coeff[1]=-2 * sinh(w0);
-        b.coeff[1]=1;
-    }
-    filter_middle_coeff B = get_AB(b);
-
-    const bandwidth_coeff _w = get_bandwidth(w0, q);
-    const double w1 = _w.coeff[0], w2 = _w.coeff[1];
-    const filter_middle_coeff ws = {0, w1, w2 < pi ? w2 : 0.5 * (w0 + w1)};
-
-    filter_middle_coeff phi[3]={0};
-    filter_middle_coeff res={0};
-    for (size_t i = 0; i < 3; ++i)
-    {
-        phi[i] = get_phi(ws.coeff[i]);
-        res.coeff[i] = dot_product(phi[i], B) / get2NotchMagnitude2(w0, q, ws.coeff[i]);
-    }
-
-    const filter_middle_coeff A = linear_solve(phi, res);
-    const filter_middle_coeff a = get_ab(A);
-    // return {a[0], a[1], a[2], b[0], b[1], b[2]};
-
-    filter_coeff filtercoeff = {a.coeff[0], a.coeff[1], a.coeff[2],
-                                    b.coeff[0], b.coeff[1], b.coeff[2]};
-    return filtercoeff;
-}
-
 filter_coeff get2Peak(double w0, double g, double q)
 {
-    const filter_middle_coeff a = solve_a(w0, 0.5 / sqrt(g) / q ,-1);
+    const filter_middle_coeff a = solve_a(w0, 0.5 / sqrt(g) / q ,1);
     const filter_middle_coeff A = get_AB(a);
     const filter_middle_coeff phi0 = get_phi(w0);
 
@@ -419,7 +319,7 @@ filter_middle_coeff get_phi(const double w)
 filter_middle_coeff linear_solve(const filter_middle_coeff A[3],const filter_middle_coeff b)
 {
     filter_middle_coeff x={0};
-    if (fabsf(A[0].coeff[0]) > fabsf(A[0].coeff[1])) {
+    if (fabs(A[0].coeff[0]) > fabs(A[0].coeff[1])) {
         x.coeff[0] = b.coeff[0] / A[0].coeff[0];
         double denominator = -(A[1].coeff[2] * A[2].coeff[1] - A[1].coeff[1] * A[2].coeff[2]);
         x.coeff[1] = A[2].coeff[2] * b.coeff[1] - A[1].coeff[2] * b.coeff[2] + A[1].coeff[2] * A[2].coeff[0] * x.coeff[0] - A[1].coeff[0] * A[2].coeff[2] * x.coeff[0];

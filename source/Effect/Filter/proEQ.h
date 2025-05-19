@@ -16,20 +16,85 @@ public:
     proEQ()
     {
 
+
+        FilterDbOctitems.set(0,6);
+        FilterDbOctitems.set(1,12);
+        FilterDbOctitems.set(2,24);
+        FilterDbOctitems.set(3,36);
+        FilterDbOctitems.set(4,48);
+        FilterDbOctitems.set(5,60);
+        FilterDbOctitems.set(6,72);
+        FilterDbOctitems.set(7,84);
+        FilterDbOctitems.set(8,96);
+
+
+
+
+
+
     }
 
     ~proEQ()
     {
-
+        Apvts->removeParameterListener("FilterComboBox", this);
+        Apvts->removeParameterListener("FilterDbOctComboBox", this);
+        Apvts->removeParameterListener("FilterFcSlider", this);
+        Apvts->removeParameterListener("FilterGainSlider", this);
+        Apvts->removeParameterListener("FilterQSlider", this);
+        Apvts->removeParameterListener("filterIndexComboBox", this);
     }
 
     void parameterChanged(const juce::String& parameterID, float newValue)
     {
+        if (parameterID.equalsIgnoreCase("FilterComboBox"))
+        {
+            juce::Logger::outputDebugString("FilterComboBox =" + FilterModitems[(size_t)newValue]);
+            // juce::Logger::outputDebugString("FilterComboBox =" + juce::String((size_t)newValue));
+            proEq_Unit.filter[filter_index].filter_mod = newValue;
+        }
+        if (parameterID.equalsIgnoreCase("FilterDbOctComboBox"))
+        {
+            juce::Logger::outputDebugString("FilterDbOctComboBox =" + juce::String(FilterDbOctitems[(size_t)newValue]));
+            proEq_Unit.filter[filter_index].filter_dboct = FilterDbOctitems[(size_t)newValue];
+        }
+        if (parameterID.equalsIgnoreCase("FilterFcSlider"))
+        {
+            juce::Logger::outputDebugString("FilterFcSlider =" + juce::String(newValue));
+            proEq_Unit.filter[filter_index].filter_f = newValue;
+        }
+        if (parameterID.equalsIgnoreCase("FilterGainSlider"))
+        {
+            juce::Logger::outputDebugString("FilterGainSlider =" + juce::String(newValue));
+            proEq_Unit.filter[filter_index].filter_gain = newValue;
+        }
+        if (parameterID.equalsIgnoreCase("FilterQSlider"))
+        {
+            juce::Logger::outputDebugString("FilterQSlider =" + juce::String(newValue));
+            proEq_Unit.filter[filter_index].filter_q = newValue;
+        }
+
+        if (parameterID.equalsIgnoreCase("filterIndexComboBox"))
+        {
+            juce::Logger::outputDebugString("filterIndexComboBox =" + juce::String(newValue));
+            filter_index = newValue;
+        }
+
+        AudioEffectproEqConfigure(&proEq_Unit,filter_index);
+
 
     }
 
     void init(juce::AudioProcessorValueTreeState *apvts) override
     {
+        Apvts = apvts;
+        Apvts->addParameterListener("FilterComboBox", this);
+        Apvts->addParameterListener("FilterDbOctComboBox", this);
+        Apvts->addParameterListener("FilterFcSlider", this);
+        Apvts->addParameterListener("FilterGainSlider", this);
+        Apvts->addParameterListener("FilterQSlider", this);
+        Apvts->addParameterListener("filterIndexComboBox", this);
+
+
     }
 
     void prepareToPlay(double sampleRate, int samplesPerBlock) override
@@ -76,7 +141,11 @@ public:
 
 private:
 
-    proEqUnit proEq_Unit;
+    int filter_index = 0;
+    juce::StringArray FilterModitems{"peak","lowShelf","lowPass","highShelf","highPass"};
+    juce::HashMap<int, int> FilterDbOctitems;
+    
+    proEqUnit proEq_Unit= {};
     juce::AudioProcessorValueTreeState* Apvts;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (proEQ)
 };

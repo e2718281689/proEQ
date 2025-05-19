@@ -196,7 +196,44 @@ juce::AudioProcessorValueTreeState::ParameterLayout PluginProcessor::CreateParam
         juce::NormalisableRange<float>(-1.0f, 1.0f, 0.01f),
         0.0f));
 
+    parameterLayout.add(std::make_unique<juce::AudioParameterChoice>(
+    "FilterComboBox",
+    "FilterComboBox",
+    juce::StringArray{"peak","lowShelf","lowPass","highShelf","highPass","bandShelf","tiltShelf","notch","bandPass"},
+    1));
+
+    parameterLayout.add(std::make_unique<juce::AudioParameterChoice>(
+        "FilterDbOctComboBox",
+        "FilterDbOctComboBox",
+        juce::StringArray{"6", "12", "24", "36", "48", "60", "72", "84", "96"},
+        1));
+
+    parameterLayout.add(std::make_unique<juce::AudioParameterChoice>(
+        "filterIndexComboBox",
+        "filterIndexComboBox",
+        juce::StringArray{"1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16"},
+        1));
+
+    parameterLayout.add(std::make_unique<juce::AudioParameterFloat>(
+    "FilterFcSlider",
+    "FilterFcSlider",
+    juce::NormalisableRange<float>(20.0f, 20*1000.0f, 0.0001f),
+    1000.0f));
+
+    parameterLayout.add(std::make_unique<juce::AudioParameterFloat>(
+    "FilterGainSlider",
+    "FilterGainSlider",
+    juce::NormalisableRange<float>(-30.0f, 30.0f, 0.0001f),
+    0.0f));
+
+    parameterLayout.add(std::make_unique<juce::AudioParameterFloat>(
+    "FilterQSlider",
+    "FilterQSlider",
+    juce::NormalisableRange<float>(0.025f, 25.0f, 0.0001f),
+    0.7070f));
+
     return parameterLayout;
+
 }
 //==============================================================================
 void PluginProcessor::getStateInformation (juce::MemoryBlock& destData)
